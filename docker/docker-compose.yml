@@ -1,0 +1,121 @@
+version: '3'
+services:
+  mongodb:
+    image: mongo:latest
+    container_name: "mongodb"
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=rootuser
+      - MONGO_INITDB_ROOT_PASSWORD=rootpass
+    ports:
+      - 27017:27017
+    networks:
+      backend:
+        aliases:
+          - "mongodb"
+  mongo-express:
+    image: mongo-express
+    container_name: mongo-express
+    restart: always
+    ports:
+      - "8081:8081"
+    environment:
+      - ME_CONFIG_MONGODB_ADMINUSERNAME=rootuser
+      - ME_CONFIG_MONGODB_ADMINPASSWORD=rootpass
+      - ME_CONFIG_MONGODB_SERVER=mongodb
+    networks:
+      - backend
+  cassandradb:
+    image: cassandra:latest
+    container_name: "cassandradb"
+    ports:
+      - "7000:7000"
+      - "9042:9042"
+    networks:
+      backend:
+        aliases:
+          - "cassandradb"
+  neo4j:
+    image: neo4j:latest
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+      - "7473:7473"
+    environment:
+      - NEO4J_AUTH=neo4j/password
+    networks:
+      backend:
+        aliases:
+          - "neo4j"
+  zookeeper:
+    image: wurstmeister/zookeeper:latest
+    ports:
+      - "2181:2181"
+    networks:
+      backend:
+        aliases:
+          - "zookeeper"
+  kafkaserver:
+    image: wurstmeister/kafka:latest
+    ports:
+      - "9092:9092"
+    environment:
+      - KAFKA_ADVERTISED_HOST_NAME=kafka
+      - KAFKA_ADVERTISED_PORT=9092
+      - KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181
+      - KAFKA_CREATE_TOPICS=posts:1:1
+    depends_on:
+      - zookeeper
+    networks:
+      backend:
+        aliases:
+          - "kafka"
+  configserver:
+    image: bmutlay/configserver:0.0.1-SNAPSHOT
+    ports:
+      - "8071:8071"
+    networks:
+      backend:
+        aliases:
+          - "configserver"
+  feedservice:
+    image: bmutlay/feed-service:0.0.1-SNAPSHOT
+    ports:
+      - "8001:8001"
+    environment:
+      PROFILE: "dev"
+      CONFIGSERVER_URI: "http://configserver:8071"
+      CONFIGSERVER_PORT: "8071"
+    depends_on:
+      configserver:
+        condition: service_started
+    networks:
+      - backend
+  postservice:
+    image: bmutlay/post-service:0.0.1-SNAPSHOT
+    ports:
+      - "8002:8002"
+    environment:
+      PROFILE: "dev"
+      CONFIGSERVER_URI: "http://configserver:8071"
+      CONFIGSERVER_PORT: "8071"
+    depends_on:
+      configserver:
+        condition: service_started
+    networks:
+      - backend
+  socialservice:
+    image: bmutlay/social-service:0.0.1-SNAPSHOT
+    ports:
+      - "8003:8003"
+    environment:
+      PROFILE: "dev"
+      CONFIGSERVER_URI: "http://configserver:8071"
+      CONFIGSERVER_PORT: "8071"
+    depends_on:
+      configserver:
+        condition: service_started
+    networks:
+      - backend
+networks:
+  backend:
+    driver: bridge

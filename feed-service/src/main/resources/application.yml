@@ -1,0 +1,19 @@
+spring:
+  application:
+    name: feed-service
+  profiles:
+    active: dev
+  config:
+    import: "optional:configserver:"
+  cloud:
+    config:
+      uri: http://configserver:8071
+      name: feed-service
+
+logging:
+  level:
+    com.netflix: WARN
+    org.springframework.web: WARN
+    com.bmutlay: DEBUG
+server:
+  port: 8001

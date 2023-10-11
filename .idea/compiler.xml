@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CompilerConfiguration">
+    <annotationProcessing>
+      <profile default="true" name="Default" enabled="true" />
+      <profile name="Maven default annotation processors profile" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <module name="social-service" />
+        <module name="post-service" />
+        <module name="configserver" />
+        <module name="feed-service" />
+      </profile>
+    </annotationProcessing>
+    <bytecodeTargetLevel>
+      <module name="eurekaserver" target="17" />
+      <module name="gatewayservice" target="17" />
+    </bytecodeTargetLevel>
+  </component>
+  <component name="JavacSettings">
+    <option name="ADDITIONAL_OPTIONS_OVERRIDE">
+      <module name="configserver" options="-parameters" />
+      <module name="eurekaserver" options="-parameters" />
+      <module name="feed-service" options="-parameters" />
+      <module name="gatewayservice" options="-parameters" />
+      <module name="post-service" options="-parameters" />
+      <module name="social-service" options="-parameters" />
+    </option>
+  </component>
+</project>

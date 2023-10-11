@@ -1,0 +1,20 @@
+spring:
+  application:
+    name: social-service
+  profiles:
+    active: dev
+  config:
+    import: "optional:configserver:"
+  cloud:
+    config:
+      uri: http://configserver:8071
+      name: social-service
+
+
+logging:
+  level:
+    com.netflix: WARN
+    org.springframework.web: WARN
+    com.bmutlay: DEBUG
+server:
+  port: 8003
