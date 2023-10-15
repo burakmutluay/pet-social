@@ -13,7 +13,10 @@ public interface UserRepository extends Neo4jRepository<User, String> {
 
     Optional<User> findByUsername(String username);
 
-    @Query("MATCH (n:User{username:{0}})<--(f:User) Return f")
+    @Query("MATCH (follower:User {username: $follower})-[r:FOLLOWS]->(:User {username:$unfollowed}) DELETE r")
+    void unfollow(String follower, String unfollowed);
+
+    @Query("MATCH (u:User {username:$username})<-[r:FOLLOWS]-(f:User) RETURN f")
     List<User> findFollowers(String username);
 
 }
