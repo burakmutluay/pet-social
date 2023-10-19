@@ -8,7 +8,6 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.data.cassandra.config.EnableCassandraAuditing;
-import org.springframework.data.cassandra.repository.config.EnableCassandraRepositories;
 
 import java.time.Instant;
 import java.util.List;
@@ -25,7 +24,6 @@ public class FeedServiceApplication {
 	public CommandLineRunner clr(FeedRepository repository) {
 		return args -> {
 			repository.deleteAll();
-
 
 			PostDTO postDTO = new PostDTO();
 			postDTO.setCreatedAt(Instant.now());
