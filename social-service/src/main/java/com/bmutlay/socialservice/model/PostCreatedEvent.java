@@ -1,4 +1,4 @@
-package com.bmutlay.postservice.model;
+package com.bmutlay.socialservice.model;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;
