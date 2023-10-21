@@ -1,10 +1,12 @@
 package com.bmutlay.socialservice.service;
 
+import com.bmutlay.socialservice.model.PostCreatedEvent;
 import com.bmutlay.socialservice.model.User;
 import com.bmutlay.socialservice.repository.UserRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import payload.ApiResponse;
 
@@ -17,6 +19,8 @@ import java.util.stream.Collectors;
 public class UserService {
 
     private final UserRepository userRepository;
+
+    private final KafkaTemplate<UUID, PostCreatedEvent> kafkaTemplate;
 
     public User createUser(User user) {
         Set<User> users = new HashSet<>();
@@ -65,6 +69,27 @@ public class UserService {
     public List<String> getFollowings(String username) {
         User user = userRepository.findByUsername(username).orElseThrow(() -> new NoSuchElementException("User not found:" + username));
         return user.getFollowing().stream().map(User::getUsername).collect(Collectors.toList());
+    }
+
+    public void populatePostCreatedEventAndSend(PostCreatedEvent postCreatedEvent) {
+        postCreatedEvent.setFollowers(new HashSet<>(this.getFollowers(postCreatedEvent.getCreatedBy())));
+        send("post-follower-topic", UUID.randomUUID(), postCreatedEvent);
+    }
+
+    public void send(String topicName, UUID key, PostCreatedEvent postCreatedEvent) {
+        var future = kafkaTemplate.send(topicName, key, postCreatedEvent);
+        future.whenComplete((sendResult, exception) -> {
+            if (exception != null) {
+                log.error(exception.getMessage());
+                future.completeExceptionally(exception);
+            } else {
+                future.complete(sendResult);
+            }
+            log.info("PostCreatedEvent with transaction id: {} published for Post ID: {} with follower size: {}",
+                    postCreatedEvent.getTransactionId(),
+                    postCreatedEvent.getPostId(),
+                    postCreatedEvent.getFollowers().size());
+        });
     }
 
 }
