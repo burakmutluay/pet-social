@@ -20,8 +20,15 @@ public class KafkaConfig {
         return new KafkaAdmin(props);
     }
     @Bean
-    public NewTopic transactionTopic() {
+    public NewTopic postTopic() {
         return TopicBuilder.name("post-topic")
+                .partitions(2)
+                .replicas(1)
+                .build();
+    }
+    @Bean
+    public NewTopic postFeedFollowTopic() {
+        return TopicBuilder.name("post-feed-follow-topic")
                 .partitions(2)
                 .replicas(1)
                 .build();
