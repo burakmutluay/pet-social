@@ -1,9 +1,6 @@
 package com.bmutlay.socialservice.model;
 
-import lombok.Data;
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.neo4j.core.schema.Id;
 import org.springframework.data.neo4j.core.schema.Property;
@@ -16,6 +13,7 @@ import java.util.Set;
 @RequiredArgsConstructor
 @Getter
 @Setter
+@EqualsAndHashCode(exclude="following")
 public class User {
     @Id
     String username;
