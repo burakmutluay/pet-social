@@ -2,6 +2,7 @@ package com.bmutlay.socialservice.service;
 
 import com.bmutlay.socialservice.model.PostCreatedEvent;
 import com.bmutlay.socialservice.model.User;
+import com.bmutlay.socialservice.model.UserFollowEvent;
 import com.bmutlay.socialservice.repository.UserRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -20,7 +21,8 @@ public class UserService {
 
     private final UserRepository userRepository;
 
-    private final KafkaTemplate<UUID, PostCreatedEvent> kafkaTemplate;
+    private final KafkaTemplate<UUID, PostCreatedEvent> postCreatedEventKafkaTemplate;
+    private final KafkaTemplate<UUID, UserFollowEvent> userFollowEventKafkaTemplate;
 
     public User createUser(User user) {
         Set<User> users = new HashSet<>();
@@ -46,7 +48,7 @@ public class UserService {
         String responseMessage = String.format("user %s started following %s", follower, followed);
 
         userRepository.save(followerUser);
-
+        sendUserFollowEvent(UUID.randomUUID(), new UserFollowEvent(follower, followed, UserFollowEvent.Status.FOLLOWED));
         return new ApiResponse(responseMessage);
     }
 
@@ -54,6 +56,7 @@ public class UserService {
     public ApiResponse unfollow(String follower, String followed) {
 
         userRepository.unfollow(follower, followed);
+        sendUserFollowEvent(UUID.randomUUID(), new UserFollowEvent(follower, followed, UserFollowEvent.Status.UNFOLLOWED));
 
         String responseMessage = String.format("user %s is no longer following %s", follower, followed);
 
@@ -73,11 +76,11 @@ public class UserService {
 
     public void populatePostCreatedEventAndSend(PostCreatedEvent postCreatedEvent) {
         postCreatedEvent.setFollowers(new HashSet<>(this.getFollowers(postCreatedEvent.getCreatedBy())));
-        send("post-follower-topic", UUID.randomUUID(), postCreatedEvent);
+        sendPostCreatedEvent("post-follower-topic", UUID.randomUUID(), postCreatedEvent);
     }
 
-    public void send(String topicName, UUID key, PostCreatedEvent postCreatedEvent) {
-        var future = kafkaTemplate.send(topicName, key, postCreatedEvent);
+    public void sendPostCreatedEvent(String topicName, UUID key, PostCreatedEvent postCreatedEvent) {
+        var future = postCreatedEventKafkaTemplate.send(topicName, key, postCreatedEvent);
         future.whenComplete((sendResult, exception) -> {
             if (exception != null) {
                 log.error(exception.getMessage());
@@ -89,6 +92,23 @@ public class UserService {
                     postCreatedEvent.getTransactionId(),
                     postCreatedEvent.getPostId(),
                     postCreatedEvent.getFollowers().size());
+        });
+    }
+
+    public void sendUserFollowEvent(UUID key, UserFollowEvent userFollowEvent) {
+        var future = userFollowEventKafkaTemplate.send("follow-event-topic", key, userFollowEvent);
+        future.whenComplete((sendResult, exception) -> {
+            if (exception != null) {
+                log.error(exception.getMessage());
+                future.completeExceptionally(exception);
+            } else {
+                future.complete(sendResult);
+            }
+            log.info("UserFollowEvent with transaction id: {} published for follower: {} with followed: {}, status: {}",
+                    userFollowEvent.getTransactionId(),
+                    userFollowEvent.getFollower(),
+                    userFollowEvent.getFollowed(),
+                    userFollowEvent.getStatus().toString());
         });
     }
 

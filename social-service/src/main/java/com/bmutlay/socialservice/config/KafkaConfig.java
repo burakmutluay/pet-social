@@ -27,4 +27,12 @@ public class KafkaConfig {
                 .build();
     }
 
+    @Bean
+    public NewTopic followEventTopic() {
+        return TopicBuilder.name("follow-event-topic")
+                .partitions(2)
+                .replicas(1)
+                .build();
+    }
+
 }
